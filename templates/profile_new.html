@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Sakkara Stats{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <h2><i class="fas fa-user"></i> Profile Settings</h2>
+        <p class="text-muted">Customize your blood sugar ranges and account settings.</p>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-cog"></i> Blood Sugar Range Settings</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('update_profile') }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Before Food Range</h6>
+                            <div class="mb-3">
+                                <label for="before_food_min" class="form-label">Minimum (mg/dL)</label>
+                                <input type="number" class="form-control" id="before_food_min" name="before_food_min" 
+                                       value="{{ current_user.before_food_min }}" min="50" max="200" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="before_food_max" class="form-label">Maximum (mg/dL)</label>
+                                <input type="number" class="form-control" id="before_food_max" name="before_food_max" 
+                                       value="{{ current_user.before_food_max }}" min="80" max="300" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">After Food Range</h6>
+                            <div class="mb-3">
+                                <label for="after_food_min" class="form-label">Minimum (mg/dL)</label>
+                                <input type="number" class="form-control" id="after_food_min" name="after_food_min" 
+                                       value="{{ current_user.after_food_min }}" min="50" max="200" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="after_food_max" class="form-label">Maximum (mg/dL)</label>
+                                <input type="number" class="form-control" id="after_food_max" name="after_food_max" 
+                                       value="{{ current_user.after_food_max }}" min="100" max="400" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Note:</strong> These ranges will be used to determine if your readings are normal or abnormal.
+                        Default ranges: Before Food (80-130 mg/dL), After Food (90-180 mg/dL).
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Account Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Email:</strong> {{ current_user.email }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Role:</strong> 
+                        <span class="badge bg-{{ 'danger' if current_user.role == 'admin' else 'primary' }}">
+                            {{ current_user.role.title() }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

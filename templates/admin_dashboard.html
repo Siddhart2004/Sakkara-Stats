@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Sakkara Stats{% endblock %}
+
+{% block content %}
+<div class="row">  <div class="col-md-12">
+        <h2>Admin Dashboard</h2>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card text-center">
+            <div class="card-body">
+                <h5>Total Users</h5>
+                <h3>{{ stats.total_users }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card text-center">
+            <div class="card-body">
+                <h5>Active Users</h5>
+                <h3>{{ stats.active_users }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card text-center">
+            <div class="card-body">
+                <h5>Total Readings</h5>
+                <h3>{{ stats.total_readings }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card text-center">
+            <div class="card-body">
+                <h5>Average Sugar</h5>
+                <h3>{{ stats.avg_sugar }} mg/dL</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Stats -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Before Food Statistics</h5>
+            </div>
+            <div class="card-body text-center">
+                <h3 class="text-primary">{{ stats.before_avg }} mg/dL</h3>
+                <p class="text-muted">Average before food reading across all users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>After Food Statistics</h5>
+            </div>
+            <div class="card-body text-center">
+                <h3 class="text-success">{{ stats.after_avg }} mg/dL</h3>
+                <p class="text-muted">Average after food reading across all users</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>System-wide Blood Sugar Trends</h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 400px; position: relative;">
+                    <canvas id="adminChart"></canvas>
+                    <div id="adminNoDataMessage" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #6B7280;">
+                        <h6>No data available</h6>
+                        <p>No blood sugar readings in the system yet!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('manage_users') }}" class="btn btn-primary btn-lg w-100 mb-2">
+                    Manage Users
+                </a>
+                <a href="{{ url_for('manage_readings') }}" class="btn btn-primary btn-lg w-100">
+                    Manage All Readings
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>System Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Platform:</strong> Sakkara Stats Blood Sugar Monitor</p>
+                <p><strong>Version:</strong> 1.0.0</p>
+                <p><strong>Last Updated:</strong> September 2025</p>
+                <p class="mb-0"><strong>Admin:</strong> {{ current_user.email }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch chart data for admin view (all users)
+    fetch('/api/chart_data')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('adminChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Before Food (All Users)',
+                        data: data.before_food,
+                        borderColor: '#0F766E',
+                        backgroundColor: 'rgba(15, 118, 110, 0.1)',
+                        fill: false
+                    }, {
+                        label: 'After Food (All Users)',
+                        data: data.after_food,
+                        borderColor: '#F59E0B',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                parser: 'YYYY-MM-DD',
+                                tooltipFormat: 'MMM DD, YYYY',
+                                displayFormats: {
+                                    day: 'MMM DD'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Blood Sugar (mg/dL)'
+                            },
+                            min: 50,
+                            max: 300
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                afterBody: function(context) {
+                                    const dataPoint = context[0].raw;
+                                    return [
+                                        'User: ' + (dataPoint.user_email || 'Unknown'),
+                                        'Time: ' + dataPoint.time,
+                                        'Food: ' + (dataPoint.food || 'N/A')
+                                    ];
+                                }
+                            }
+                        },
+                        legend: {
+                            display: true
+                        }
+                    }
+                }
+            });
+        });
+});
+</script>
+{% endblock %}

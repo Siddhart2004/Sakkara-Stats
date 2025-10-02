@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sakkara Stats{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: "Inter", "Roboto", sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        main {
+            flex: 1;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: #FFFFFF !important;
+        }
+        .logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        .status-normal {
+            color: #059669;
+            font-weight: bold;
+        }
+        .status-high {
+            color: #DC2626;
+            font-weight: bold;
+        }
+        .status-low {
+            color: #F59E0B;
+            font-weight: bold;
+        }
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.02);
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #059669;
+            border-color: #059669;
+            border-radius: 8px;
+        }
+        .btn-secondary:hover {
+            background-color: #047857;
+            border-color: #047857;
+        }
+        .btn-danger {
+            background-color: #DC2626;
+            border-color: #DC2626;
+            border-radius: 8px;
+        }
+        .btn-danger:hover {
+            background-color: #B91C1C;
+            border-color: #B91C1C;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar .nav-link {
+            color: white !important;
+        }
+        .navbar .nav-link:hover {
+            color: #E5E7EB !important;
+        }
+        .navbar .dropdown-toggle {
+            color: white !important;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+            color: white;
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-height: 120px;
+        }
+        .stats-card .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 1.5rem;
+        }
+        .stats-card h5 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+        .stats-card h3 {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .alert-success {
+            background-color: #D1FAE5;
+            border-color: #A7F3D0;
+            color: #065F46;
+        }
+        .alert-danger {
+            background-color: #FEE2E2;
+            border-color: #FECACA;
+            color: #991B1B;
+        }
+        .text-muted {
+            color: #64748B !important;
+        }
+        .card-header {
+            background-color: #F8FAFC;
+            border-bottom: 1px solid #E2E8F0;
+            color: #1E293B;
+            border-radius: 12px 12px 0 0 !important;
+        }
+        .table {
+            color: #1E293B;
+        }
+        .table th {
+            color: #475569;
+            font-weight: 600;
+            border-color: #E2E8F0;
+        }
+        .table td {
+            border-color: #F1F5F9;
+        }
+        .badge {
+            border-radius: 6px;
+        }
+        .bg-primary {
+            background-color: #1E40AF !important;
+        }
+        .bg-secondary {
+            background-color: #F59E0B !important;
+        }
+        .text-primary {
+            color: #1E40AF !important;
+        }
+        .text-success {
+            color: #059669 !important;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='assets/Logo.svg') }}" alt="Sakkara Stats Logo" class="logo">
+                Sakkara Stats
+            </a>
+            
+            {% if current_user.is_authenticated %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.role == 'user' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('history') }}">
+                            History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('profile') }}">
+                            Profile
+                        </a>
+                    </li>
+                    {% elif current_user.role == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            Admin Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('manage_users') }}">
+                            Manage Users
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('manage_readings') }}">
+                            Manage Readings
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            {{ current_user.name if current_user.name else current_user.email }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="mt-5" style="background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%); color: white; padding: 2rem 0;">
+        <div class="container text-center">
+            <div class="row">
+                <div class="col-md-12">
+                    <p class="mb-2">Sakkara iruka? appo <strong>Sakkara Stats</strong> use panni monitor pannunga</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

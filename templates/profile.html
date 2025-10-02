@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Sakkara Stats{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5>Account Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('update_profile') }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ current_user.name or '' }}" placeholder="Enter your full name">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" 
+                                       value="{{ current_user.email }}" disabled>
+                                <small class="text-muted">Email cannot be changed</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5>Blood Sugar Range Settings</h5>
+                    <p class="text-muted">Customize your normal sugar level ranges for better tracking.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">Before Food Range</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label for="before_food_min" class="form-label">Min (mg/dL)</label>
+                                            <input type="number" class="form-control" id="before_food_min" 
+                                                   name="before_food_min" value="{{ current_user.before_food_min }}" 
+                                                   min="50" max="200" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="before_food_max" class="form-label">Max (mg/dL)</label>
+                                            <input type="number" class="form-control" id="before_food_max" 
+                                                   name="before_food_max" value="{{ current_user.before_food_max }}" 
+                                                   min="80" max="300" required>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Standard: 80-130 mg/dL</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">After Food Range</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label for="after_food_min" class="form-label">Min (mg/dL)</label>
+                                            <input type="number" class="form-control" id="after_food_min" 
+                                                   name="after_food_min" value="{{ current_user.after_food_min }}" 
+                                                   min="50" max="200" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="after_food_max" class="form-label">Max (mg/dL)</label>
+                                            <input type="number" class="form-control" id="after_food_max" 
+                                                   name="after_food_max" value="{{ current_user.after_food_max }}" 
+                                                   min="100" max="300" required>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Standard: 90-180 mg/dL</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6>Change Password</h6>
+                    <p class="text-muted">Leave blank to keep current password.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="new_password" name="new_password" minlength="6">
+                                <small class="text-muted">Leave blank to keep current password</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            Update Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const newPassword = document.getElementById('new_password');
+    const confirmPassword = document.getElementById('confirm_password');
+    
+    function validatePasswords() {
+        if (newPassword.value && confirmPassword.value) {
+            if (newPassword.value !== confirmPassword.value) {
+                confirmPassword.setCustomValidity('Passwords do not match');
+            } else {
+                confirmPassword.setCustomValidity('');
+            }
+        } else {
+            confirmPassword.setCustomValidity('');
+        }
+    }
+    
+    newPassword.addEventListener('input', validatePasswords);
+    confirmPassword.addEventListener('input', validatePasswords);
+    
+    // Validate range inputs
+    const beforeMin = document.getElementById('before_food_min');
+    const beforeMax = document.getElementById('before_food_max');
+    const afterMin = document.getElementById('after_food_min');
+    const afterMax = document.getElementById('after_food_max');
+    
+    function validateRanges() {
+        if (parseInt(beforeMin.value) >= parseInt(beforeMax.value)) {
+            beforeMax.setCustomValidity('Maximum must be greater than minimum');
+        } else {
+            beforeMax.setCustomValidity('');
+        }
+        
+        if (parseInt(afterMin.value) >= parseInt(afterMax.value)) {
+            afterMax.setCustomValidity('Maximum must be greater than minimum');
+        } else {
+            afterMax.setCustomValidity('');
+        }
+    }
+    
+    beforeMin.addEventListener('input', validateRanges);
+    beforeMax.addEventListener('input', validateRanges);
+    afterMin.addEventListener('input', validateRanges);
+    afterMax.addEventListener('input', validateRanges);
+});
+</script>
+{% endblock %}

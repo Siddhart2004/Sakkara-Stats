@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chart Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    <div style="width: 800px; height: 400px; margin: 50px auto;">
+        <canvas id="testChart"></canvas>
+    </div>
+    
+    <script>
+        const ctx = document.getElementById('testChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Test Data',
+                    data: [
+                        {x: '2025-09-28', y: 120},
+                        {x: '2025-09-29', y: 140},
+                        {x: '2025-09-30', y: 110}
+                    ],
+                    borderColor: '#0F766E',
+                    backgroundColor: 'rgba(15, 118, 110, 0.1)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            parser: 'YYYY-MM-DD',
+                        }
+                    },
+                    y: {
+                        min: 50,
+                        max: 300
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

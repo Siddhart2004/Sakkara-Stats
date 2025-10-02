@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sakkara Stats{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Dashboard</h2>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card stats-card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <h5>Total Readings</h5>
+                <h3>{{ stats.total_readings }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stats-card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <h5>Average</h5>
+                <h3>{{ stats.avg_sugar }} mg/dL</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stats-card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <h5>Min</h5>
+                <h3>{{ stats.min_sugar }} mg/dL</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stats-card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <h5>Max</h5>
+                <h3>{{ stats.max_sugar }} mg/dL</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stats-card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <h5>Before Food Avg</h5>
+                <h3>{{ stats.before_avg }} mg/dL</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stats-card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <h5>After Food Avg</h5>
+                <h3>{{ stats.after_avg }} mg/dL</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Reading Form -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Add New Reading</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_reading') }}">
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="date" name="date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="time_of_day" class="form-label">Time of Day</label>
+                        <select class="form-control" id="time_of_day" name="time_of_day" required>
+                            <option value="">Select Time</option>
+                            <option value="Morning">Morning</option>
+                            <option value="Afternoon">Afternoon</option>
+                            <option value="Night">Night</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="meal_relation" class="form-label">Meal Relation</label>
+                        <select class="form-control" id="meal_relation" name="meal_relation" required>
+                            <option value="">Select Relation</option>
+                            <option value="Before Food">Before Food</option>
+                            <option value="After Food">After Food</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sugar_value" class="form-label">Sugar Value (mg/dL)</label>
+                        <input type="number" class="form-control" id="sugar_value" name="sugar_value" min="50" max="500" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="food_eaten" class="form-label">Food Eaten</label>
+                        <textarea class="form-control" id="food_eaten" name="food_eaten" rows="3" placeholder="Describe what you ate..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        Add Reading
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Blood Sugar Trends</h5>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshChart()">
+                    🔄 Refresh Chart
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-flex flex-wrap gap-3">
+                        <span><span style="display: inline-block; width: 12px; height: 12px; background-color: #059669; border-radius: 50%; margin-right: 5px;"></span>Normal</span>
+                        <span><span style="display: inline-block; width: 12px; height: 12px; background-color: #DC2626; border-radius: 50%; margin-right: 5px;"></span>High</span>
+                        <span><span style="display: inline-block; width: 12px; height: 12px; background-color: #F59E0B; border-radius: 50%; margin-right: 5px;"></span>Low</span>
+                    </small>
+                </div>
+                <div id="chartContainer" style="height: 400px; position: relative;">
+                    <canvas id="sugarChart"></canvas>
+                    <div id="noDataMessage" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #6B7280;">
+                        <h6>No data available</h6>
+                        <p>Add some blood sugar readings to see your trends!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Readings -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Recent Readings</h5>
+            </div>
+            <div class="card-body">
+                {% if readings %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Meal Relation</th>
+                                <th>Value</th>
+                                <th>Food Eaten</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reading in readings %}
+                            <tr>
+                                <td>{{ reading.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ reading.time_of_day }}</td>
+                                <td>{{ reading.meal_relation }}</td>
+                                <td>{{ reading.sugar_value }} mg/dL</td>
+                                <td>{{ reading.food_eaten or 'N/A' }}</td>
+                                <td>
+                                    {% if reading.meal_relation == 'Before Food' %}
+                                        {% if reading.sugar_value >= current_user.before_food_min and reading.sugar_value <= current_user.before_food_max %}
+                                            Normal
+                                        {% elif reading.sugar_value > current_user.before_food_max %}
+                                            High
+                                        {% else %}
+                                            Low
+                                        {% endif %}
+                                    {% else %}
+                                        {% if reading.sugar_value >= current_user.after_food_min and reading.sugar_value <= current_user.after_food_max %}
+                                            Normal
+                                        {% elif reading.sugar_value > current_user.after_food_max %}
+                                            High
+                                        {% else %}
+                                            Low
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('delete_reading', reading_id=reading.id) }}" 
+                                       class="btn btn-sm btn-danger" 
+                                       onclick="return confirm('Are you sure you want to delete this reading?')">
+                                        Delete
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No readings yet. Add your first reading!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let sugarChart = null; // Global chart variable
+
+function createChart(data) {
+    const canvas = document.getElementById('sugarChart');
+    const ctx = canvas.getContext('2d');
+    const noDataMessage = document.getElementById('noDataMessage');
+    
+    // Destroy existing chart if it exists
+    if (sugarChart) {
+        sugarChart.destroy();
+    }
+    
+    // Prepare datasets
+    const beforeFoodData = data.before_food || [];
+    const afterFoodData = data.after_food || [];
+    
+    console.log('Creating chart with data:', {
+        beforeFood: beforeFoodData.length,
+        afterFood: afterFoodData.length
+    });
+    
+    // Show/hide no data message
+    if (beforeFoodData.length === 0 && afterFoodData.length === 0) {
+        noDataMessage.style.display = 'block';
+        canvas.style.display = 'none';
+        return;
+    } else {
+        noDataMessage.style.display = 'none';
+        canvas.style.display = 'block';
+    }
+    
+    // Create new chart
+    sugarChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: 'Before Food',
+                data: beforeFoodData,
+                borderColor: '#1E40AF',
+                backgroundColor: 'rgba(30, 64, 175, 0.1)',
+                fill: false,
+                tension: 0.1,
+                pointBorderColor: '#FFFFFF',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointBackgroundColor: function(context) {
+                    const value = context.parsed.y;
+                    const ranges = data.before_food_range;
+                    if (!ranges) return '#1E40AF';
+                    
+                    if (value > ranges.max) return '#DC2626'; // High - Red
+                    if (value < ranges.min) return '#F59E0B'; // Low - Orange
+                    return '#059669'; // Normal - Green
+                }
+            }, {
+                label: 'After Food',
+                data: afterFoodData,
+                borderColor: '#F59E0B',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                fill: false,
+                tension: 0.1,
+                pointBorderColor: '#FFFFFF',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointBackgroundColor: function(context) {
+                    const value = context.parsed.y;
+                    const ranges = data.after_food_range;
+                    if (!ranges) return '#F59E0B';
+                    
+                    if (value > ranges.max) return '#DC2626'; // High - Red
+                    if (value < ranges.min) return '#F59E0B'; // Low - Orange
+                    return '#059669'; // Normal - Green
+                }
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Blood Sugar (mg/dL)',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    min: 50,
+                    max: 300,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        title: function(context) {
+                            return 'Date: ' + context[0].raw.x;
+                        },
+                        label: function(context) {
+                            const dataPoint = context.raw;
+                            const value = context.parsed.y;
+                            let status = 'Unknown';
+                            let statusColor = '';
+                            
+                            // Determine status based on meal relation and ranges
+                            if (context.datasetIndex === 0) { // Before Food
+                                const ranges = data.before_food_range;
+                                if (ranges) {
+                                    if (value > ranges.max) {
+                                        status = 'HIGH';
+                                        statusColor = '';
+                                    } else if (value < ranges.min) {
+                                        status = 'LOW';
+                                        statusColor = '';
+                                    } else {
+                                        status = 'NORMAL';
+                                        statusColor = '';
+                                    }
+                                }
+                            } else { // After Food
+                                const ranges = data.after_food_range;
+                                if (ranges) {
+                                    if (value > ranges.max) {
+                                        status = 'HIGH';
+                                        statusColor = '';
+                                    } else if (value < ranges.min) {
+                                        status = 'LOW';
+                                        statusColor = '';
+                                    } else {
+                                        status = 'NORMAL';
+                                        statusColor = '';
+                                    }
+                                }
+                            }
+                            
+                            return [
+                                context.dataset.label + ': ' + value + ' mg/dL',
+                                'Status: ' + status
+                            ];
+                        },
+                        afterBody: function(context) {
+                            const dataPoint = context[0].raw;
+                            let lines = [];
+                            if (dataPoint.time) {
+                                lines.push('Time: ' + dataPoint.time);
+                            }
+                            if (dataPoint.food) {
+                                lines.push('Food: ' + dataPoint.food);
+                            }
+                            return lines;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    console.log('Chart created successfully');
+}
+
+function loadChartData() {
+    console.log('Loading chart data...');
+    
+    fetch('/api/chart_data')
+        .then(response => {
+            console.log('API Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Chart data received:', data);
+            createChart(data);
+        })
+        .catch(error => {
+            console.error('Error loading chart data:', error);
+            document.getElementById('noDataMessage').innerHTML = 
+                '<h6>Error loading chart</h6><p>' + error.message + '</p>';
+            document.getElementById('noDataMessage').style.display = 'block';
+            document.getElementById('sugarChart').style.display = 'none';
+        });
+}
+
+function refreshChart() {
+    console.log('Refreshing chart...');
+    loadChartData();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing...');
+    
+    // Set today's date as default
+    const dateInput = document.getElementById('date');
+    if (dateInput) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded!');
+        document.getElementById('noDataMessage').innerHTML = 
+            '<h6>Chart library not loaded</h6><p>Please refresh the page</p>';
+        document.getElementById('noDataMessage').style.display = 'block';
+        return;
+    }
+    
+    // Load initial chart data
+    loadChartData();
+    
+    // Auto-refresh chart every 30 seconds
+    setInterval(refreshChart, 30000);
+});
+
+// Refresh chart when form is submitted
+document.addEventListener('submit', function(e) {
+    if (e.target.action && e.target.action.includes('add_reading')) {
+        setTimeout(refreshChart, 1000); // Refresh after 1 second
+    }
+});
+</script>
+{% endblock %}
